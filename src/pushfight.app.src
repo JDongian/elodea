@@ -1,0 +1,9 @@
+%% -*- erlang -*-
+{application, pushfight,
+ [{description, "pushfight app"},
+  {vsn, "1"},
+  {modules, []},
+  {registered, []},
+  {mod, {e2_application, [pushfight_app]}},
+  {env, []},
+  {applications, [kernel, stdlib]}]}.

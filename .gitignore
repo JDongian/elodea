@@ -1,0 +1,10 @@
+*.beam
+.eunit
+erl_crash.dump
+ebin
+deps
+log
+run
+dev.config
+
+*.sw*
