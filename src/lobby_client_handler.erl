@@ -1,11 +1,12 @@
 -module(lobby_client_handler).
 -behavior(e2_task).
+-include("player.hrl").
 
 -export([start_link/1]).
 -export([handle_task/1, terminate/2]).
 
 
-%% Exports
+%% E2
 start_link(Socket) ->
     e2_task:start_link(?MODULE, Socket).
 
@@ -17,32 +18,46 @@ terminate(_Reason, Socket) ->
 
 
 %% Handlers
-handle_command({"LOGIN", Bar}, Socket) ->
-    handle_reply(try_login(Bar), Socket);
-handle_command({"LOGOUT", Bar}, Socket) ->
+handle_command({<<"LOGIN">>, Username}, Socket) ->
+    handle_reply(try_login(Username), Socket);
+handle_command({<<"LOGOUT">>, Bar}, Socket) ->
     handle_reply(try_logout(Bar), Socket);
+% perhaps handle_reply -> send_reply, disconnecting user on bad input
+handle_command(bad_format, Socket) ->
+    handle_reply(bad_format, Socket);
 handle_command(_, Socket) ->
     handle_reply(error, Socket).
 
-send_reply({ok, {login, _Name}}, Socket) ->
-    gen_tcp:send(Socket, "{'status': \"ok\"}\r\n");
+send_reply({ok, {login, #player{ref=Ref,handle=Username}}}, Socket) ->
+    RefString = list_to_binary(erlang:ref_to_list(Ref)),
+    gen_tcp:send(Socket,
+                 json_encode_reply([{status, ok},
+                                    {login, [{username, Username},
+                                             {ref, RefString}]}]));
 send_reply({ok, {logout, _Name}}, Socket) ->
-    gen_tcp:send(Socket, "{'status': \"ok\"}\r\n");
+    gen_tcp:send(Socket,
+                 json_encode_reply([{status, ok}]));
+send_reply(bad_format, Socket) ->
+    gen_tcp:send(Socket,
+                 json_encode_reply([{status, error},
+                                    {error, <<"could not parse command">>}]));
 send_reply(error, Socket) ->
-    gen_tcp:send(Socket, "{'status': \"error\"}\r\n").
+    gen_tcp:send(Socket,
+                 json_encode_reply([{status, error},
+                                    {error, <<"unknown command">>}])).
 
 
 %% Actions
-try_login(Name) ->
-    {ok, {login, Name}}.
+try_login(Username) ->
+    lobby_data:login(Username).
 
-try_logout(Name) ->
-    {ok, {logout, Name}}.
+try_logout(Username) ->
+    lobby_data:logout(Username).
 
 
 %% Helpers
 handle_command_line({ok, Data}, Socket) ->
-    io:format("### Got ~p from client~n", [Data]),
+    %% io:format("### Got ~p from client~n", [Data]),
     handle_command(parse_command(Data), Socket);
 handle_command_line({error, _Err}, _) ->
     {stop, normal}.
@@ -56,9 +71,17 @@ read_bytes(Socket) ->
     gen_tcp:recv(Socket, 0).
 
 parse_command(Data) ->
-    Map = parse_json(Data),
-    io:format("### Parsed JSON: ~w~n", [Map]),
-    Map.
+    case jsx:is_json(Data) of
+        true ->
+            Command = json_decode(Data);
+        false ->
+            Command = bad_format
+    end,
+    Command.
 
-parse_json(Data) ->
-    jsx:decode(Data, [return_maps]).
+json_decode(Data) ->
+    [Result] = jsx:decode(Data),
+    Result.
+
+json_encode_reply(Reply) ->
+    jsx:encode(Reply).

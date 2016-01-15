@@ -31,6 +31,4 @@ wait_for_client(ListenSocket) ->
     Socket.
 
 dispatch_client(Socket) ->
-    % io:format("dispatching client ~p~n", [Client]).
-    {ok, V} = lobby_client_handler:start_link(Socket),
-    io:format("dispatching client ~p~n", [V]).
+    {ok, _Pid} = lobby_client_handler:start_link(Socket).
