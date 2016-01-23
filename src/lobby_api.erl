@@ -4,8 +4,8 @@
 -define(ID, ets:fun2ms(fun(X) -> X end)).
 
 -export([create_players_ets/1,
-         login/2,
-         logout/2,
+         player_login/2,
+         player_logout/2,
          get_player/2,
          get_all_players_online/1]).
 
@@ -13,17 +13,17 @@
 create_players_ets(Name) ->
     io:format("ETS create with name: ~w.~n", [Name]),
     Players = ets:new(Name,
-                      [set, {keypos,#player.ref}, named_table]),
+                      [set, {keypos,#player.handle}, named_table]),
     {ok, Players}.
 
-login(Db, Player) ->
-    ets:insert(Db, Player#player{status=idle}),
-    io:format("Adding player: ~w.~n", [Player]),
-    {ok, {login, Player}}.
+player_login(Db, Player) ->
+    Success = ets:insert_new(Db, Player#player{status=idle}),
+    % io:format("Adding player: ~w.~n", [Player]),
+    {ok, {login_success, Success, Player}}.
 
-logout(Db, Player=#player{ref=Ref}) ->
-    ets:delete(Db, Ref),
-    {ok, {logout, Player}}.
+player_logout(Db, Player=#player{handle=Username}) ->
+    Success = ets:delete(Db, Username),
+    {ok, {logout_success, Success, Player}}.
 
 get_player(Db, Ref) ->
     ets:lookup(Db, Ref).

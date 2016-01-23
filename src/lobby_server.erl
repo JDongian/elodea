@@ -1,17 +1,18 @@
 -module(lobby_server).
 -behavior(e2_task).
--export([start_link/1, start_link/0]).
+
+-export([start_link/1]).
 -export([init/1, handle_task/1]).
 
 -define(TCP_OPTIONS, [binary, % data comes in as a binary
                       %inet, IPv4
+                      %inet6, IPv6
                       {packet, 0},
                       {active, false},
                       {reuseaddr, true}]). % because Unix
 
 
-start_link() ->
-    start_link(4242).
+%% E2
 start_link(Port) ->
     e2_task:start_link(?MODULE, Port).
 
@@ -22,6 +23,8 @@ handle_task(Socket) ->
     dispatch_client(wait_for_client(Socket)),
     {repeat, Socket}.
 
+
+%% Helpers
 listen(Port) ->
     {ok, Socket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
     Socket.
@@ -31,4 +34,4 @@ wait_for_client(ListenSocket) ->
     Socket.
 
 dispatch_client(Socket) ->
-    {ok, _Pid} = lobby_client_handler:start_link(Socket).
+    {ok, _Pid} = lobby_client_handler_sup:start_handler(Socket).

@@ -1,9 +1,9 @@
 %% -*- erlang -*-
-{application, pushfight,
- [{description, "pushfight app"},
+{application, eloby,
+ [{description, "generic game lobby"},
   {vsn, "1"},
   {modules, []},
   {registered, []},
-  {mod, {e2_application, [pushfight_app]}},
+  {mod, {e2_application, [eloby_app]}},
   {env, []},
   {applications, [kernel, stdlib]}]}.

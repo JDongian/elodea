@@ -1,9 +1,10 @@
 -module(lobby_client_handler).
 -behavior(e2_task).
--include("player.hrl").
 
 -export([start_link/1]).
 -export([handle_task/1, terminate/2]).
+
+-include("player.hrl").
 
 
 %% E2
@@ -18,25 +19,30 @@ terminate(_Reason, Socket) ->
 
 
 %% Handlers
-handle_command({<<"LOGIN">>, Username}, Socket) ->
+handle_command({<<"login">>, Username}, Socket) ->
     handle_reply(try_login(Username), Socket);
-handle_command({<<"LOGOUT">>, Bar}, Socket) ->
-    handle_reply(try_logout(Bar), Socket);
+handle_command({<<"logout">>, Username}, Socket) ->
+    handle_reply(try_logout(Username), Socket);
 % perhaps handle_reply -> send_reply, disconnecting user on bad input
 handle_command(bad_format, Socket) ->
     handle_reply(bad_format, Socket);
 handle_command(_, Socket) ->
     handle_reply(error, Socket).
 
-send_reply({ok, {login, #player{ref=Ref,handle=Username}}}, Socket) ->
+send_reply({ok, {login_success,
+                 Success, #player{ref=Ref,handle=Username}}}, Socket) ->
     RefString = list_to_binary(erlang:ref_to_list(Ref)),
+    Status = if Success -> success; not Success -> fail end,
     gen_tcp:send(Socket,
-                 json_encode_reply([{status, ok},
+                 json_encode_reply([{status, Status},
                                     {login, [{username, Username},
                                              {ref, RefString}]}]));
-send_reply({ok, {logout, _Name}}, Socket) ->
+send_reply({ok, {logout_success,
+                 Success, #player{handle=Username}}}, Socket) ->
+    Status = if Success -> success; not Success -> fail end,
     gen_tcp:send(Socket,
-                 json_encode_reply([{status, ok}]));
+                 json_encode_reply([{status, Status},
+                                    {logout, [{username, Username}]}]));
 send_reply(bad_format, Socket) ->
     gen_tcp:send(Socket,
                  json_encode_reply([{status, error},
@@ -57,7 +63,6 @@ try_logout(Username) ->
 
 %% Helpers
 handle_command_line({ok, Data}, Socket) ->
-    %% io:format("### Got ~p from client~n", [Data]),
     handle_command(parse_command(Data), Socket);
 handle_command_line({error, _Err}, _) ->
     {stop, normal}.
