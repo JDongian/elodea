@@ -17,12 +17,13 @@ handle_task(Socket) ->
 terminate(_Reason, Socket) ->
     gen_tcp:close(Socket).
 
-
 %% Handlers
-handle_command({<<"login">>, Username}, Socket) ->
+handle_command([{<<"command">>, <<"login">>}, {<<"username">>, Username}], Socket) ->
     handle_reply(try_login(Username), Socket);
-handle_command({<<"logout">>, Username}, Socket) ->
+handle_command([{<<"command">>, <<"logout">>}, {<<"username">>, Username}], Socket) ->
     handle_reply(try_logout(Username), Socket);
+handle_command([{<<"command">>, <<"get_players">>}], Socket) ->
+    handle_reply(get_players(), Socket);
 % perhaps handle_reply -> send_reply, disconnecting user on bad input
 handle_command(bad_format, Socket) ->
     handle_reply(bad_format, Socket);
@@ -43,6 +44,9 @@ send_reply({ok, {logout_success,
     gen_tcp:send(Socket,
                  json_encode_reply([{status, Status},
                                     {logout, [{username, Username}]}]));
+send_reply({ok, {all_players, EtsResults}}, Socket) ->
+    gen_tcp:send(Socket,
+                 json_encode_reply([{players, extract_player_data(EtsResults)}]));
 send_reply(bad_format, Socket) ->
     gen_tcp:send(Socket,
                  json_encode_reply([{status, error},
@@ -50,7 +54,12 @@ send_reply(bad_format, Socket) ->
 send_reply(error, Socket) ->
     gen_tcp:send(Socket,
                  json_encode_reply([{status, error},
-                                    {error, <<"unknown command">>}])).
+                                    {error, <<"unknown command">>}]));
+send_reply(_e, Socket) ->
+    io:format("~w~n", [_e]),
+    gen_tcp:send(Socket,
+                 json_encode_reply([{status, error},
+                                    {error, <<"wildcard">>}])).
 
 
 %% Actions
@@ -59,6 +68,9 @@ try_login(Username) ->
 
 try_logout(Username) ->
     lobby_data:logout(Username).
+
+get_players() ->
+    lobby_data:get_all_players_online().
 
 
 %% Helpers
@@ -85,8 +97,11 @@ parse_command(Data) ->
     Command.
 
 json_decode(Data) ->
-    [Result] = jsx:decode(Data),
-    Result.
+    jsx:decode(Data).
 
 json_encode_reply(Reply) ->
     jsx:encode(Reply).
+
+extract_player_data(PlayerList) ->
+    [[{handle, Username}, {status, Status}] ||
+     #player{handle=Username,status=Status} <- PlayerList].

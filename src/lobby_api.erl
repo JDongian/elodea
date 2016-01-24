@@ -30,4 +30,4 @@ get_player(Db, Ref) ->
 
 % There has to be a better way to SELECT * ...
 get_all_players_online(Db) ->
-    ets:select(Db, ?ID).
+    {ok, {all_players, ets:select(Db, ?ID)}}.
