@@ -25,6 +25,9 @@ logout(User) ->
 get_all_players_online() ->
     e2_service:call(?MODULE, {get_all}).
 
+challenge(Players, Game) ->
+    e2_service:call(?MODULE, {challenge, Players}).
+
 
 %% Handlers
 handle_msg({login, User}, _From, Ets) ->
@@ -32,7 +35,9 @@ handle_msg({login, User}, _From, Ets) ->
 handle_msg({logout, User}, _From, Ets) ->
     {reply, lobby_api:player_logout(Ets, User), Ets};
 handle_msg({get_all}, _From, Ets) ->
-    {reply, lobby_api:get_all_players_online(Ets), Ets}.
+    {reply, lobby_api:get_all_players_online(Ets), Ets};
+handle_msg({challenge, Players}, _From, Ets) ->
+    {reply, not_implemented}.
 
 
 %% Helpers

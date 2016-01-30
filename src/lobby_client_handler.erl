@@ -18,12 +18,18 @@ terminate(_Reason, Socket) ->
     gen_tcp:close(Socket).
 
 %% Handlers
-handle_command([{<<"command">>, <<"login">>}, {<<"username">>, Username}], Socket) ->
+handle_command([{<<"command">>, <<"login">>},
+                {<<"username">>, Username}], Socket) ->
     handle_reply(try_login(Username), Socket);
-handle_command([{<<"command">>, <<"logout">>}, {<<"username">>, Username}], Socket) ->
+handle_command([{<<"command">>, <<"logout">>},
+                {<<"username">>, Username}], Socket) ->
     handle_reply(try_logout(Username), Socket);
 handle_command([{<<"command">>, <<"get_players">>}], Socket) ->
     handle_reply(get_players(), Socket);
+handle_command([{<<"command">>, <<"challenge_players">>},
+                {<<"game">>, Game},
+                {<<"players">>, Players}], Socket) ->
+    handle_reply(challenge_players(Players, Game), Socket);
 % perhaps handle_reply -> send_reply, disconnecting user on bad input
 handle_command(bad_format, Socket) ->
     handle_reply(bad_format, Socket);
@@ -71,6 +77,11 @@ try_logout(Username) ->
 
 get_players() ->
     lobby_data:get_all_players_online().
+
+challenge_players(Players, <<"pushfight">>) ->
+    lobby_data:challenge(Players, pushfight);
+challenge_players(Players, _) ->
+    {ok, not_implemented}.
 
 
 %% Helpers
