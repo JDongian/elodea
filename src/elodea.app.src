@@ -1,9 +1,9 @@
 %% -*- erlang -*-
-{application, eloby,
+{application, elodea,
  [{description, "generic game lobby"},
   {vsn, "1"},
   {modules, []},
   {registered, []},
-  {mod, {e2_application, [eloby_app]}},
+  {mod, {e2_application, [elodea_app]}},
   {env, []},
   {applications, [kernel, stdlib]}]}.

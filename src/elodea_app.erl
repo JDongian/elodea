@@ -1,4 +1,4 @@
--module(eloby_app).
+-module(elodea_app).
 -behavior(e2_application).
 
 -export([init/0]).
