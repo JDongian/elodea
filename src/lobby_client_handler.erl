@@ -26,7 +26,7 @@ handle_command([{<<"command">>, <<"logout">>},
     handle_reply(try_logout(Username), Socket);
 handle_command([{<<"command">>, <<"get_players">>}], Socket) ->
     handle_reply(get_players(), Socket);
-handle_command([{<<"command">>, <<"challenge_players">>},
+handle_command([{<<"command">>, <<"challenge">>},
                 {<<"game">>, Game},
                 {<<"players">>, Players}], Socket) ->
     handle_reply(challenge_players(Players, Game), Socket);
@@ -65,7 +65,7 @@ send_reply(_e, Socket) ->
     io:format("~w~n", [_e]),
     gen_tcp:send(Socket,
                  json_encode_reply([{status, error},
-                                    {error, <<"wildcard">>}])).
+                                    {error, <<"unknown error">>}])).
 
 
 %% Actions
@@ -81,7 +81,7 @@ get_players() ->
 challenge_players(Players, <<"pushfight">>) ->
     lobby_data:challenge(Players, pushfight);
 challenge_players(Players, _) ->
-    {ok, not_implemented}.
+    {ok, invalid_game}.
 
 
 %% Helpers

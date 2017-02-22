@@ -1,7 +1,7 @@
 -module(lobby_data).
 -behavior(e2_service).
 
--export([start_link/1, login/1, logout/1, get_all_players_online/0]).
+-export([start_link/1, login/1, logout/1, get_all_players_online/0, challenge/2]).
 -export([init/1, handle_msg/3]).
 
 -include("player.hrl").
@@ -26,7 +26,7 @@ get_all_players_online() ->
     e2_service:call(?MODULE, {get_all}).
 
 challenge(Players, Game) ->
-    e2_service:call(?MODULE, {challenge, Players}).
+    e2_service:call(?MODULE, {challenge, Players, Game}).
 
 
 %% Handlers
@@ -36,8 +36,8 @@ handle_msg({logout, User}, _From, Ets) ->
     {reply, lobby_api:player_logout(Ets, User), Ets};
 handle_msg({get_all}, _From, Ets) ->
     {reply, lobby_api:get_all_players_online(Ets), Ets};
-handle_msg({challenge, Players}, _From, Ets) ->
-    {reply, not_implemented}.
+handle_msg({challenge, Players, Game}, _From, Ets) ->
+    {reply, lobby_api:challenge(Game, Players, Ets), Ets}.
 
 
 %% Helpers

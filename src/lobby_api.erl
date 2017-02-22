@@ -31,3 +31,8 @@ get_player(Db, Ref) ->
 % There has to be a better way to SELECT * ...
 get_all_players_online(Db) ->
     {ok, {all_players, ets:select(Db, ?ID)}}.
+
+challenge(pushfight, Players, Ets) ->
+    ets:lookup(Db, Ref).
+challenge(_, _, Ets) ->
+    {ok, unknown_game}.
